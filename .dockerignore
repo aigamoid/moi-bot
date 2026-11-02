@@ -1,6 +1,7 @@
 .git
 .gitignore
-.env.example
+.env
+.env.*
 README.md
 __pycache__
 *.pyc

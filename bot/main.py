@@ -3,27 +3,32 @@ import os
 from dotenv import load_dotenv
 import discord
 
-load_dotenv()
-
-intents = discord.Intents.default()
-intents.message_content = True
-
-client = discord.Client(intents=intents)
+from bot.responder import MoiResponder
 
 
-@client.event
-async def on_ready():
-    print(f"Logged in as {client.user} (ID: {client.user.id})")
+def create_client(responder=None):
+    intents = discord.Intents.default()
+    intents.message_content = True
+    # discord.py supports a minimum of 30 seconds for this setting. Our own
+    # per-action deadline is shorter and also covers network/API stalls.
+    client = discord.Client(intents=intents, max_ratelimit_timeout=30.0)
+    responder = responder if responder is not None else MoiResponder()
+
+    @client.event
+    async def on_ready():
+        print(f"Logged in as {client.user} (ID: {client.user.id})")
+
+    @client.event
+    async def on_message(message):
+        await responder.on_message(message)
+
+    return client
 
 
-@client.event
-async def on_message(message):
-    if message.author.bot:
-        return
-
-    if "もい" in message.content:
-        await message.reply("もい")
-        await message.add_reaction("🦆")
+def main():
+    load_dotenv(override=False)
+    create_client().run(os.environ["DISCORD_TOKEN"])
 
 
-client.run(os.environ["DISCORD_TOKEN"])
+if __name__ == "__main__":
+    main()
